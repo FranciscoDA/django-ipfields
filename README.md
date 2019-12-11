@@ -5,7 +5,7 @@ This package allows defining django model fields as IP addresses or networks. Va
 
 This package was inspired by the [django-netfields](https://pypi.org/project/django-netfields/) package.
 
-```
+```py
 from django.db import models
 from ipfields import IpAddressField, IpNetworkField
 class MyModel(models.Model):
