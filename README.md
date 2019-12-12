@@ -28,5 +28,5 @@ Conversion from form string values to the appropiate python value is done throug
 
 Relevant lookups:
 * __supernets: Matches rows where the column in the lhs is a supernet of the value in the rhs
-* __startswith: Matches rows where the column in the lhs is a subnet of the value in the lhs
+* __subnets: Matches rows where the column in the lhs is a subnet of the value in the lhs
 

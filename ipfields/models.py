@@ -122,10 +122,35 @@ class IpNetworkField(django.db.models.CharField):
             value = self.to_python(value)
         return _net_to_repr(value)
 
+class IpFieldLookup(django.db.models.Lookup):
+    def get_prep_lookup(self):
+        rhs = self.rhs
+        if isinstance(self.rhs, str):
+            try:
+                rhs = ip_address(rhs)
+            except ValueError:
+                try:
+                    rhs = ip_network(rhs)
+                except ValueError:
+                    raise ValidationError(f'{rhs} does not appear to be an IPv4, IPv6 address or network.')
+        if isinstance(rhs, (IPv4Address, IPv6Address)):
+            return _addr_to_repr(rhs)
+        elif isinstance(rhs, (IPv4Network, IPv6Network)):
+            return _net_to_repr(rhs)
+        else:
+            raise ValidationError('Invalid rhs for lookup. Must be one of str, IPv4Address, IPv6Address, IPv4Network, IPv6Network.')
+
+    def get_rhs_op(self, connection, rhs):
+        if hasattr(self.rhs, 'as_sql') or self.bilateral_transforms:
+            pattern = connection.pattern_ops[self.pattern_lookup_name].format(connection.pattern_esc)
+            return pattern.format(rhs)
+        else:
+            return connection.operators[self.pattern_lookup_name] % rhs
 
 @IpNetworkField.register_lookup
-class SupernetLookup(django.db.models.Lookup):
+class SupernetLookup(IpFieldLookup):
     lookup_name = 'supernets'
+    pattern_lookup_name = 'startswith'
 
     def process_lhs(self, compiler, connection, lhs=None):
         lhs = lhs or self.lhs
@@ -136,27 +161,6 @@ class SupernetLookup(django.db.models.Lookup):
         else:
             return self.get_db_prep_lookup(lhs, connection)
 
-    def get_rhs_op(self, connection, rhs):
-        if hasattr(self.rhs, 'as_sql') or self.bilateral_transforms:
-            pattern = connection.pattern_ops['startswith'].format(connection.pattern_esc)
-            return pattern.format(rhs)
-        else:
-            return connection.operators['startswith'] % rhs
-
-    def get_prep_lookup(self):
-        if isinstance(self.rhs, str):
-            try:
-                self.rhs = ip_address(self.rhs)
-            except ValueError:
-                self.rhs = ip_network(self.rhs)
-
-        if isinstance(self.rhs, (IPv4Address, IPv6Address)):
-            return _addr_to_repr(self.rhs)
-        if isinstance(self.rhs, (IPv4Network, IPv6Network)):
-            return _net_to_repr(self.rhs)
-        return rhs
-
-
     def as_sql(self, compiler, connection):
         self.lhs, self.rhs = self.rhs, self.lhs
         lhs_sql, lhs_params = self.process_lhs(compiler, connection)
@@ -164,5 +168,23 @@ class SupernetLookup(django.db.models.Lookup):
         params = lhs_params + rhs_params
         rhs_sql = self.get_rhs_op(connection, rhs_sql)
 
-        r = ('%s %s' % (lhs_sql, rhs_sql), params)
-        return r
+        return '%s %s' % (lhs_sql, rhs_sql), params
+
+@IpNetworkField.register_lookup
+class SubnetLookup(IpFieldLookup):
+    lookup_name = 'subnets'
+    pattern_lookup_name = 'startswith'
+
+    def process_rhs(self, qn, connection):
+        rhs, params = super().process_rhs(qn, connection)
+        if self.rhs_is_direct_value() and params and not self.bilateral_transforms:
+            params[0] = '%s%%' % connection.ops.prep_for_like_query(params[0])
+        return rhs, params
+
+    def as_sql(self, compiler, connection):
+        lhs_sql, lhs_params = self.process_lhs(compiler, connection)
+        rhs_sql, rhs_params = self.process_rhs(compiler, connection)
+        params = lhs_params + rhs_params
+        rhs_sql = self.get_rhs_op(connection, rhs_sql)
+
+        return '%s %s' % (lhs_sql, rhs_sql), params
