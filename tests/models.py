@@ -1,5 +1,5 @@
 from django.db import models
-from ipfields import IpAddressField, IpNetworkField
+from django_ipfields import IpAddressField, IpNetworkField
 
 class AddrTestModel(models.Model):
     field = IpAddressField(null=False)

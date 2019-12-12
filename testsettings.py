@@ -6,7 +6,7 @@ DATABASES = {
 }
 
 INSTALLED_APPS = (
-    'ipfields',
+    'django_ipfields',
     'tests',
 )
 
