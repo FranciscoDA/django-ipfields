@@ -1,5 +1,8 @@
 # Django-ipfields
 
+[![Build Status](https://travis-ci.com/FranciscoDA/django-ipfields.svg?branch=master)](https://travis-ci.com/FranciscoDA/django-ipfields)
+
+
 This package allows defining django model fields as IP addresses or networks. Values are encoded into the database as a character string of binary digits. This allows compatibility with RDMSes other than PostgreSQL while allowing subnet/supernet queries.
 
 
