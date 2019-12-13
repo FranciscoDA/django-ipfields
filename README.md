@@ -17,8 +17,8 @@ class MyModel(models.Model):
     ipv4_addr     = IpAddressField(version=4) # forces ipv4 addresses
     ipv6_net      = IpNetworkField(version=6) # forces ipv6 networks
     nullable_addr = IpAddressField(null=True) # allows ipv4 and ipv6 addresses and null
-	any_addr      = IpAddressField()          # allows ipv4 and ipv6 addresses
-	any_net       = IpNetworkField()          # allows ipv6 and ipv4 networks
+    any_addr      = IpAddressField()          # allows ipv4 and ipv6 addresses
+    any_net       = IpNetworkField()          # allows ipv6 and ipv4 networks
 ```
 
 Caveats:
@@ -43,4 +43,4 @@ Conversion from form string values to the appropiate python value is done throug
 Relevant lookups:
 * `__supernets`: Matches rows where the column in the lhs is a supernet of the value in the rhs
 * `__subnets`: Matches rows where the column in the lhs is a subnet of the value in the lhs
-
+* `__isprivate`: Matches rows where the column in the lhs is (or isn't) a private network according to the rhs

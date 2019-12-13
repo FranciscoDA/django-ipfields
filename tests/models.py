@@ -18,3 +18,8 @@ class NullableNetTestModel(models.Model):
 
 class UniqueNetTestModel(models.Model):
     field = IpNetworkField(unique=True)
+
+class NetBoolTestModel(models.Model):
+    netfield = IpNetworkField(null=False)
+    boolfield = models.BooleanField(null=False)
+
